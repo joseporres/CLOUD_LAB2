@@ -15,3 +15,7 @@ docker build -t wordcountlab2 .
 ```
 docker run -v "$(pwd)/data:/data"  wordcountlab2
 ```
+
+## Imagen docker hub
+
+https://hub.docker.com/repository/docker/jorgevasquezutec/lab02/general
