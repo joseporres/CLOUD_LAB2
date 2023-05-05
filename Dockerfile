@@ -1,21 +1,27 @@
 FROM ubuntu:latest
 
+
+ENV SPARK_VERSION 1.5.2
+ENV HADOOP_VERSION 2.6
+ENV PYTHON_VERSION 2.7
+ENV SPARK_HOME /opt/spark
+
+
 RUN apt-get update && \
-    apt-get install -y openjdk-8-jdk wget && \
-    wget https://archive.apache.org/dist/spark/spark-1.5.2/spark-1.5.2-bin-hadoop2.6.tgz && \
-    tar -xzf spark-1.5.2-bin-hadoop2.6.tgz && \
-    mv spark-1.5.2-bin-hadoop2.6 /spark && \
-    rm spark-1.5.2-bin-hadoop2.6.tgz
+    apt-get install -y openjdk-8-jdk wget python${PYTHON_VERSION} && \
+    apt-get clean
 
-ENV SPARK_HOME /spark
+RUN wget -qO- https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz | tar xz -C /opt && \
+    mv /opt/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION} $SPARK_HOME && \
+    rm -rf $SPARK_HOME/examples $SPARK_HOME/data && \
+    chown -R root:root $SPARK_HOME && \
+    chmod -R 755 $SPARK_HOME
+
 ENV PATH $PATH:$SPARK_HOME/bin
+ENV PYSPARK_PYTHON=python2.7
 
-COPY WordCount.java /src/WordCount.java
-WORKDIR /src
+COPY WordCount.py /app/WordCount.py
 
-RUN mkdir -p /app/build && \
-    javac -cp $(echo /spark/jars/*.jar | tr ' ' ':') /app/WordCount.java -d /app/build && \
-    jar -cvf /app/WordCount.jar -C /app/build/ .
+WORKDIR /app
 
-
-CMD ["/spark/bin/spark-submit", "--class", "WordCount", "--master", "local[*]", "WordCount.jar", "input_file.txt", "output_file.txt"]
+CMD ["spark-submit", "--class", "WordCount", "--master", "local[*]", "/app/WordCount.py", "/data/input_file.txt", "/data/output_file.txt"]
